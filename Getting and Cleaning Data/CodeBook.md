@@ -11,10 +11,10 @@ features <- fread(file.path(path, "UCI HAR Dataset/features.txt")
 
 Step 3:
 Merge the training and the test to create a singular readable dataset for example:
-# merge datasets and add labels
+
 combined <- rbind(train, test)
 AND
-# Convert classLabels to activityName basically. More explicit. 
+
 combined[["Activity"]] <- factor(combined[, Activity]
                                  , levels = activityLabels[["classLabels"]]
                                  , labels = activityLabels[["activityName"]])
