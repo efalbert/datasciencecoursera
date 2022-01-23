@@ -1,0 +1,132 @@
+---
+title: "Machine Learning Project"
+author: "ealbert"
+date: "1/22/2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Background and Data file
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+
+The training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har. If you use the document you create for this class for any purpose please cite them as they have been very generous in allowing their data to be used for this kind of assignment.
+
+## Loading Libraries
+
+```{r}
+library(knitr)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(rattle)
+library(randomForest)
+library(corrplot)
+set.seed(1234)
+```
+
+## Analysing and Cleaning Data
+
+```{r}
+traincsv <- read.csv("C:/Users/ef_al/OneDrive/Desktop/Coursera/Data Science  Course/Practical Machine Learning/pml-training.csv")
+testcsv <- read.csv("C:/Users/ef_al/OneDrive/Desktop/Coursera/Data Science  Course/Practical Machine Learning/pml-testing.csv")
+
+dim(traincsv)
+
+dim(testcsv)
+
+traincsv <- traincsv[,colMeans(is.na(traincsv)) < .9] 
+traincsv <- traincsv[,-c(1:7)] 
+
+nvz <- nearZeroVar(traincsv)
+traincsv <- traincsv[,-nvz]
+dim(traincsv)
+
+inTrain <- createDataPartition(y=traincsv$classe, p=0.7, list=F)
+train <- traincsv[inTrain,]
+valid <- traincsv[-inTrain,]
+
+control <- trainControl(method="cv", number=3, verboseIter=F)
+```
+
+
+# Representation of Predictions
+
+For this Project, three prediction methods are utilized namely:
+
+1. Random Forests
+2. Decision Tree
+3. Generalized Boosted Model (GBM)
+
+## Random Forest
+
+```{r}
+mod_rf <- train(classe~., data=train, method="rf", trControl = control, tuneLength = 5)
+
+pred_rf <- predict(mod_rf, valid)
+cmrf <- confusionMatrix(pred_rf, factor(valid$classe))
+cmrf
+```
+
+### Plot
+```{r}
+plot(mod_rf)
+```
+
+## Decision Trees
+
+```{r}
+mod_trees <- train(classe~., data=train, method="rpart", trControl = control, tuneLength = 5)
+fancyRpartPlot(mod_trees$finalModel)
+```
+
+### Prediction
+```{r}
+pred_trees <- predict(mod_trees, valid)
+cmtrees <- confusionMatrix(pred_trees, factor(valid$classe))
+cmtrees
+```
+
+## Generalized Boosted Model (GBM)
+
+```{r}
+mod_gbm <- train(classe~., data=train, method="gbm", trControl = control, tuneLength = 5, verbose = F)
+
+pred_gbm <- predict(mod_gbm, valid)
+cmgbm <- confusionMatrix(pred_gbm, factor(valid$classe))
+cmgbm
+```
+
+
+### Plot
+```{r}
+plot(mod_gbm)
+```
+
+## Random Forest to predict test results (QUIZ)
+
+```{r}
+pred <- predict(mod_rf, testcsv)
+print(pred)
+```
+
+# Apendix
+
+```{r}
+corrPlot <- cor(train[, -length(names(train))])
+corrplot(corrPlot, method="color")
+
+plot(mod_trees)
+```
+
+
